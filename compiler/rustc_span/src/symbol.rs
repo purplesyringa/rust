@@ -2463,6 +2463,7 @@ symbols! {
         wasm_abi,
         wasm_import_module,
         wasm_target_feature,
+        wasm_throw,
         weak,
         weak_odr,
         where_clause_attrs,

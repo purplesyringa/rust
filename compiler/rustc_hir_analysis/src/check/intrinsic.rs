@@ -601,6 +601,9 @@ pub(crate) fn check_intrinsic_type(
                 tcx.types.i32,
             )
         }
+        sym::wasm_throw => {
+            (0, 1, vec![Ty::new_mut_ptr(tcx, tcx.types.u8)], tcx.types.never)
+        }
 
         sym::va_start | sym::va_end => {
             (0, 0, vec![mk_va_list_ty(hir::Mutability::Mut).0], tcx.types.unit)

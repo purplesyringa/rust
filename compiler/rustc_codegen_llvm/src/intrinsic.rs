@@ -246,6 +246,18 @@ impl<'ll, 'tcx> IntrinsicCallBuilderMethods<'tcx> for Builder<'_, 'll, 'tcx> {
                 );
                 return Ok(());
             }
+            sym::wasm_throw => {
+                if !wants_wasm_eh(self.sess()) {
+                    span_bug!(span, "the wasm_throw intrinsic is only supported on WASM EH");
+                }
+                let tag = fn_args.const_at(0).to_value().valtree.unwrap_leaf().to_i32();
+                let ptr = args[0].immediate();
+                self.call_intrinsic(
+                    "llvm.wasm.throw",
+                    &[],
+                    &[self.const_i32(tag), ptr],
+                )
+            }
             sym::breakpoint => self.call_intrinsic("llvm.debugtrap", &[], &[]),
             sym::va_copy => {
                 let dest = args[0].immediate();
