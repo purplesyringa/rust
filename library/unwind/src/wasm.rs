@@ -47,23 +47,24 @@ pub unsafe fn _Unwind_RaiseException(exception: *mut _Unwind_Exception) -> _Unwi
     // enabled exceptions via `-Z build-std` with `-C panic=unwind`.
     cfg_select! {
         panic = "unwind" => {
-            // It's important that this intrinsic is defined here rather than in `core`. Since it
-            // unwinds, invoking it from Rust code compiled with `-C panic=unwind` immediately
-            // forces `panic_unwind` as the required panic runtime.
+            // This intrinsic is marked `extern "C-unwind"` instead of implicit `extern "Rust"`
+            // because it can unwind even if the `panic_abort` runtime is used, and leaking
+            // exceptions into `-C panic=abort` Rust code is unsound. Using `C-unwind` guarantees
+            // that if this module is compiled with `-C panic=unwind`, the required panic strategy
+            // for the binary is inferred as `unwind`, and thus any safety violations are detected.
             //
-            // We ship unwinding `core` on Emscripten, so making this intrinsic part of `core` would
-            // prevent linking precompiled `core` into `-C panic=abort` binaries. Unlike `core`,
-            // this particular module is never precompiled with `-C panic=unwind` because it's only
-            // used for bare-metal targets, so an error can only arise if the user both manually
+            // This particular module is never precompiled with `-C panic=unwind` because it's only
+            // used for bare-metal targets, so this error can only arise if the user both manually
             // recompiles `std` with `-C panic=unwind` and manually compiles the binary crate with
             // `-C panic=abort`, which we don't care to support.
             //
+            // On the flip side, it's important that this intrinsic is defined here rather than in
+            // `core`, since it allows unwinding `core` shipped for Emscripten to be linked with
+            // `-C panic=abort` binaries.
+            //
             // See https://github.com/rust-lang/rust/issues/148246.
-            unsafe extern "C-unwind" {
-                /// LLVM lowers this intrinsic to the `throw` instruction.
-                #[link_name = "llvm.wasm.throw"]
-                fn wasm_throw(tag: i32, ptr: *mut u8) -> !;
-            }
+            #[rustc_intrinsic]
+            extern "C-unwind" unsafe fn wasm_throw<const TAG: i32>(ptr: *mut u8) -> !;
 
             // The wasm `throw` instruction takes a "tag", which differentiates certain types of
             // exceptions from others. LLVM currently just identifies these via integers, with 0
@@ -73,7 +74,7 @@ pub unsafe fn _Unwind_RaiseException(exception: *mut _Unwind_Exception) -> _Unwi
             // corresponds with llvm::WebAssembly::Tag::CPP_EXCEPTION
             //     in llvm-project/llvm/include/llvm/CodeGen/WasmEHFuncInfo.h
             const CPP_EXCEPTION_TAG: i32 = 0;
-            wasm_throw(CPP_EXCEPTION_TAG, exception.cast())
+            unsafe { wasm_throw::<CPP_EXCEPTION_TAG>(exception.cast()) }
         }
         _ => {
             let _ = exception;

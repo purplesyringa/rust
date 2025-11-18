@@ -4,7 +4,7 @@
 // runtime for native wasm exceptions from scratch
 #![feature(core_intrinsics)]
 #![feature(lang_items)]
-#![feature(link_llvm_intrinsics)]
+#![feature(rustc_attrs)]
 
 extern crate alloc;
 

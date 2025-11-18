@@ -2,14 +2,12 @@
 fn eh_personality() {}
 
 mod internal {
-    extern "C" {
-        #[link_name = "llvm.wasm.throw"]
-        pub fn wasm_throw(tag: i32, ptr: *mut u8) -> !;
-    }
+    #[rustc_intrinsic]
+    extern "C-unwind" unsafe fn wasm_throw<const TAG: i32>(ptr: *mut u8) -> !;
 }
 
 unsafe fn wasm_throw(ptr: *mut u8) -> ! {
-    internal::wasm_throw(0, ptr);
+    internal::wasm_throw::<0>(ptr);
 }
 
 #[panic_handler]

@@ -3,7 +3,7 @@
 //@ [WASMEXN] compile-flags: -C panic=unwind -Z emscripten-wasm-eh
 
 #![crate_type = "lib"]
-#![feature(core_intrinsics, link_llvm_intrinsics)]
+#![feature(core_intrinsics, rustc_attrs)]
 
 extern "C-unwind" {
     fn may_panic();
@@ -82,12 +82,11 @@ pub fn test_rtry() {
 pub fn test_intrinsic() {
     let _log_on_drop = LogOnDrop;
 
-    unsafe extern "C-unwind" {
-        #[link_name = "llvm.wasm.throw"]
-        fn wasm_throw(tag: i32, ptr: *mut u8) -> !;
-    }
+    #[rustc_intrinsic]
+    extern "C-unwind" unsafe fn wasm_throw<const TAG: i32>(ptr: *mut u8) -> !;
+
     unsafe {
-        wasm_throw(0, core::ptr::null_mut());
+        wasm_throw::<0>(core::ptr::null_mut());
     }
 
     // WASMEXN-NOT: call
