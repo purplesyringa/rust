@@ -52,7 +52,8 @@ fn has_ffi_unwind_calls(tcx: TyCtxt<'_>, local_def_id: LocalDefId) -> bool {
         let sig = ty.fn_sig(tcx);
 
         // Rust calls cannot themselves create foreign unwinds.
-        // We assume this is true for intrinsics as well.
+        // We assume this is true for rustic intrinsics as well. Non-rustic intrinsics are judged by
+        // their ABI annotation.
         if sig.abi().is_rustic_abi() {
             continue;
         };
@@ -63,7 +64,7 @@ fn has_ffi_unwind_calls(tcx: TyCtxt<'_>, local_def_id: LocalDefId) -> bool {
                 // Rust calls cannot themselves create foreign unwinds (even if they use a non-Rust
                 // ABI). So the leak of the foreign unwind into Rust can only be elsewhere, not
                 // here.
-                if !tcx.is_foreign_item(def_id) {
+                if !tcx.is_foreign_item(def_id) && tcx.intrinsic(def_id).is_none() {
                     continue;
                 }
                 Some(def_id)

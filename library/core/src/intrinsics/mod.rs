@@ -41,9 +41,9 @@
 //! Rust intrinsics may, in general, unwind. If an intrinsic can never unwind, add the
 //! `#[rustc_nounwind]` attribute so that the compiler can make use of this fact.
 //!
-//! However, even for intrinsics that may unwind, rustc assumes that a Rust intrinsics will never
+//! However, even for intrinsics that may unwind, rustc generally assumes that intrinsics will never
 //! initiate a foreign (non-Rust) unwind, and thus for panic=abort we can always assume that these
-//! intrinsics cannot unwind.
+//! intrinsics cannot unwind. To opt out of this assumption, mark the intrinsic `extern "C-unwind"`.
 
 #![unstable(
     feature = "core_intrinsics",

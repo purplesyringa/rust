@@ -1237,7 +1237,10 @@ pub fn fn_can_unwind(tcx: TyCtxt<'_>, fn_def_id: Option<DefId>, abi: ExternAbi) 
         //
         // Note that this is true regardless ABI specified on the function -- a `extern "C-unwind"`
         // function defined in Rust is also required to abort.
-        if !tcx.sess.panic_strategy().unwinds() && !tcx.is_foreign_item(did) {
+        if !tcx.sess.panic_strategy().unwinds()
+            && !tcx.is_foreign_item(did)
+            && tcx.intrinsic(did).is_none()
+        {
             return false;
         }
 
